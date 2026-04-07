@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kiểm Tra Từ Vựng Tiếng Trung – Giao Tiếp Đời Sống</title>
+<style>
+  :root {
+    --red: #e53e3e;
+    --green: #38a169;
+    --blue: #3182ce;
+    --yellow: #d69e2e;
+    --bg: #f7f8fc;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #2d3748;
+    --muted: #718096;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  /* Header */
+  .header { background: linear-gradient(135deg, #c0392b 0%, #e74c3c 50%, #c0392b 100%); color: white; padding: 24px 20px; text-align: center; }
+  .header h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 6px; }
+  .header p { opacity: 0.9; font-size: 0.95rem; }
+
+  /* Screen management */
+  .screen { display: none; max-width: 760px; margin: 0 auto; padding: 20px; }
+  .screen.active { display: block; }
+
+  /* Home screen */
+  .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0; }
+  .mode-card { background: var(--card); border: 2px solid var(--border); border-radius: 12px; padding: 18px; cursor: pointer; transition: all .2s; text-align: center; }
+  .mode-card:hover, .mode-card.selected { border-color: #e74c3c; background: #fff5f5; }
+  .mode-card .icon { font-size: 2rem; margin-bottom: 8px; }
+  .mode-card h3 { font-size: 0.95rem; font-weight: 600; color: var(--text); }
+  .mode-card p { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+
+  .lesson-selector { background: var(--card); border-radius: 12px; padding: 18px; margin: 16px 0; box-shadow: var(--shadow); }
+  .lesson-selector h3 { margin-bottom: 12px; font-size: 0.95rem; color: var(--muted); }
+  .lesson-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { padding: 6px 14px; border-radius: 20px; border: 2px solid var(--border); background: white; cursor: pointer; font-size: 0.82rem; transition: all .15s; }
+  .chip:hover { border-color: #e74c3c; }
+  .chip.selected { background: #e74c3c; border-color: #e74c3c; color: white; }
+  .chip.all-chip { background: #2d3748; border-color: #2d3748; color: white; }
+
+  .stats-row { display: flex; gap: 12px; margin: 16px 0; }
+  .stat-box { flex: 1; background: var(--card); border-radius: 10px; padding: 14px; text-align: center; box-shadow: var(--shadow); }
+  .stat-box .num { font-size: 1.8rem; font-weight: 700; color: #e74c3c; }
+  .stat-box .lbl { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+  /* Quiz screen */
+  .quiz-topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .progress-wrap { flex: 1; margin: 0 16px; }
+  .progress-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #e74c3c, #c0392b); border-radius: 4px; transition: width .3s; }
+  .progress-text { text-align: center; font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+  .score-badge { background: #e74c3c; color: white; border-radius: 20px; padding: 4px 14px; font-size: 0.82rem; font-weight: 600; }
+
+  .question-card { background: var(--card); border-radius: 16px; padding: 28px; box-shadow: var(--shadow); margin-bottom: 16px; }
+  .q-type-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 10px; }
+  .q-lesson-label { font-size: 0.78rem; color: #e74c3c; margin-bottom: 8px; }
+  .q-text { font-size: 1.35rem; font-weight: 600; color: var(--text); line-height: 1.4; }
+
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .option-btn { background: var(--card); border: 2px solid var(--border); border-radius: 10px; padding: 14px 16px; cursor: pointer; font-size: 0.92rem; text-align: left; transition: all .15s; color: var(--text); }
+  .option-btn:hover:not(:disabled) { border-color: #e74c3c; background: #fff5f5; }
+  .option-btn.correct { background: #f0fff4; border-color: var(--green); color: var(--green); font-weight: 600; }
+  .option-btn.wrong { background: #fff5f5; border-color: var(--red); color: var(--red); }
+  .option-btn.reveal { background: #f0fff4; border-color: var(--green); color: var(--green); }
+  .option-btn:disabled { cursor: default; }
+
+  .feedback-bar { border-radius: 10px; padding: 12px 16px; margin-top: 14px; font-weight: 600; display: none; }
+  .feedback-bar.correct { background: #f0fff4; border: 2px solid var(--green); color: var(--green); display: block; }
+  .feedback-bar.wrong { background: #fff5f5; border: 2px solid var(--red); color: var(--red); display: block; }
+
+  .nav-row { display: flex; justify-content: flex-end; margin-top: 16px; }
+
+  /* Result screen */
+  .result-card { background: var(--card); border-radius: 16px; padding: 30px; text-align: center; box-shadow: var(--shadow); margin: 20px 0; }
+  .result-score { font-size: 4rem; font-weight: 800; color: #e74c3c; }
+  .result-total { font-size: 1.1rem; color: var(--muted); margin-bottom: 16px; }
+  .result-msg { font-size: 1.2rem; font-weight: 600; margin-bottom: 8px; }
+  .result-sub { font-size: 0.9rem; color: var(--muted); }
+
+  .result-breakdown { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
+  .rb-box { background: var(--bg); border-radius: 10px; padding: 14px; text-align: center; }
+  .rb-box .num { font-size: 1.5rem; font-weight: 700; }
+  .rb-box .lbl { font-size: 0.78rem; color: var(--muted); }
+  .rb-box.good .num { color: var(--green); }
+  .rb-box.bad .num { color: var(--red); }
+  .rb-box.neutral .num { color: var(--blue); }
+
+  /* Review list */
+  .review-list { margin-top: 20px; }
+  .review-item { background: var(--card); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 12px; box-shadow: var(--shadow); }
+  .review-item .icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
+  .review-item .q { font-size: 0.92rem; font-weight: 600; }
+  .review-item .a-correct { color: var(--green); font-size: 0.85rem; }
+  .review-item .a-wrong { color: var(--red); font-size: 0.85rem; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 10px; border: none; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: all .15s; }
+  .btn-primary { background: #e74c3c; color: white; }
+  .btn-primary:hover { background: #c0392b; }
+  .btn-secondary { background: var(--card); border: 2px solid var(--border); color: var(--text); }
+  .btn-secondary:hover { border-color: #e74c3c; }
+  .btn-sm { padding: 8px 18px; font-size: 0.85rem; }
+  .btn-block { width: 100%; justify-content: center; }
+  .btn-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🀄 Kiểm Tra Từ Vựng Tiếng Trung</h1>
+  <p>Giao Tiếp Đời Sống – 14 Bài Học</p>
+</div>
+
+<!-- HOME SCREEN -->
+<div id="screen-home" class="screen active">
+  <div class="stats-row">
+    <div class="stat-box"><div class="num">347</div><div class="lbl">Từ vựng</div></div>
+    <div class="stat-box"><div class="num">14</div><div class="lbl">Bài học</div></div>
+    <div class="stat-box"><div class="num">20</div><div class="lbl">Câu / đề</div></div>
+  </div>
+
+  <div class="lesson-selector">
+    <h3>📚 Chọn bài học</h3>
+    <div class="lesson-chips" id="lesson-chips"></div>
+  </div>
+
+  <div class="lesson-selector">
+    <h3>🎯 Dạng câu hỏi</h3>
+    <div class="mode-grid">
+      <div class="mode-card selected" id="mode-both" onclick="selectMode('both')">
+        <div class="icon">🔀</div>
+        <h3>Trộn cả hai</h3>
+        <p>Pinyin → Việt & Việt → Pinyin</p>
+      </div>
+      <div class="mode-card" id="mode-p2v" onclick="selectMode('p2v')">
+        <div class="icon">🇨🇳➡️🇻🇳</div>
+        <h3>Pinyin → Tiếng Việt</h3>
+        <p>Đọc pinyin, chọn nghĩa</p>
+      </div>
+      <div class="mode-card" id="mode-v2p" onclick="selectMode('v2p')">
+        <div class="icon">🇻🇳➡️🇨🇳</div>
+        <h3>Tiếng Việt → Pinyin</h3>
+        <p>Đọc nghĩa, chọn pinyin</p>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary btn-block" onclick="startQuiz()" style="margin-top:8px;">
+    ▶ Bắt đầu làm bài
+  </button>
+</div>
+
+<!-- QUIZ SCREEN -->
+<div id="screen-quiz" class="screen">
+  <div class="quiz-topbar">
+    <button class="btn btn-secondary btn-sm" onclick="showHome()">← Về trang chủ</button>
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-text" id="progress-text"></div>
+    </div>
+    <div class="score-badge" id="score-badge">0 ✓</div>
+  </div>
+
+  <div class="question-card">
+    <div class="q-type-label" id="q-type-label"></div>
+    <div class="q-lesson-label" id="q-lesson-label"></div>
+    <div class="q-text" id="q-text"></div>
+  </div>
+
+  <div class="options-grid" id="options-grid"></div>
+  <div class="feedback-bar" id="feedback-bar"></div>
+
+  <div class="nav-row">
+    <button class="btn btn-primary" id="next-btn" style="display:none;" onclick="nextQuestion()">Câu tiếp →</button>
+  </div>
+</div>
+
+<!-- RESULT SCREEN -->
+<div id="screen-result" class="screen">
+  <div class="result-card">
+    <div class="result-score" id="result-score"></div>
+    <div class="result-total" id="result-total"></div>
+    <div class="result-msg" id="result-msg"></div>
+    <div class="result-sub" id="result-sub"></div>
+    <div class="result-breakdown" id="result-breakdown"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="startQuiz()">🔁 Làm lại đề mới</button>
+    <button class="btn btn-secondary" onclick="showHome()">🏠 Trang chủ</button>
+    <button class="btn btn-secondary" onclick="toggleReview()">📋 Xem đáp án</button>
+  </div>
+
+  <div id="review-section" style="display:none;">
+    <h3 style="margin: 20px 0 12px; color: var(--muted); font-size:0.9rem; text-transform:uppercase; letter-spacing:1px;">Chi tiết kết quả</h3>
+    <div class="review-list" id="review-list"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// VOCABULARY DATA
+// ============================================================
+const VOCAB = [
+  // BÀI 1: GIAO TIẾP SINH HOẠT
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"yǒu kòng ma",v:"Có rảnh không"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"zài máng",v:"Đang bận"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"bú tài fāngbiàn",v:"Không tiện lắm"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"děng yíxià",v:"Đợi một chút"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"mǎshàng lái",v:"Tới liền"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"gǎi shíjiān",v:"Đổi thời gian"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"méi wèntí",v:"Không vấn đề"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"bù hǎo yìsi",v:"Ngại quá / xin lỗi"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"máfan nǐ",v:"Phiền bạn"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"kěyǐ bāng wǒ ma",v:"Bạn giúp tôi được không"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"zài shuō yí biàn",v:"Nói lại lần nữa"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"tīng bù dǒng",v:"Không hiểu"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"míngbái le",v:"Hiểu rồi"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"méi guānxi",v:"Không sao"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"xiǎoxīn yìdiǎn",v:"Cẩn thận một chút"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"lái de jí",v:"Kịp"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"lái bù jí",v:"Không kịp"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"yuē yíxià",v:"Hẹn thử"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"xià cì ba",v:"Để lần sau"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"shùnbiàn",v:"Tiện thể"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"suíbiàn",v:"Sao cũng được"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"yǒu diǎn lèi",v:"Hơi mệt"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"xūyào xiūxi",v:"Cần nghỉ"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"méi shì le",v:"Không sao rồi"},
+  {l:1,n:"Bài 1: Giao tiếp sinh hoạt",p:"xīnkǔ le",v:"Vất vả rồi"},
+  // BÀI 2: INTERNET – MẠNG XÃ HỘI
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"shàngwǎng",v:"Lên mạng"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"wǎngluò",v:"Mạng internet"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"wúxiànwǎng",v:"Wifi"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"xìnhào",v:"Tín hiệu"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"jiā hǎoyǒu",v:"Kết bạn"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"shān hǎoyǒu",v:"Xóa bạn"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"fā xiāoxi",v:"Gửi tin nhắn"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"huí xiāoxi",v:"Trả lời tin"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"kàn péngyǒuquān",v:"Xem bảng tin"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"fā péngyǒuquān",v:"Đăng bài"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"diǎn zàn",v:"Thả like"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"pínglùn",v:"Bình luận"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"fēnxiǎng",v:"Chia sẻ"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"zhíbō",v:"Livestream"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"xiàzǎi",v:"Tải xuống"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"shàngchuán",v:"Tải lên"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"mìmǎ",v:"Mật khẩu"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"zhànghào",v:"Tài khoản"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"dēnglù",v:"Đăng nhập"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"tuìchū",v:"Đăng xuất"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"wǎng kǎ",v:"Mạng lag"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"duàn wǎng",v:"Mất mạng"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"shàngxiàn",v:"Online / lên mạng"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"qúnliáo",v:"Nhóm chat"},
+  {l:2,n:"Bài 2: Internet – Mạng xã hội",p:"tōngzhī",v:"Thông báo"},
+  // BÀI 3: TÂM TRẠNG CẢM XÚC
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"kāixīn",v:"Vui vẻ"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"mǎnyì",v:"Hài lòng"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"xīngfèn",v:"Hào hứng"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"gǎndòng",v:"Cảm động"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"fàngsōng",v:"Thoải mái, thư giãn"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"ānxīn",v:"Yên tâm"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"zìháo",v:"Tự hào"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"qīdài",v:"Mong đợi"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"jǐnzhāng",v:"Căng thẳng"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"dānxīn",v:"Lo lắng"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"hàipà",v:"Sợ hãi"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"zhāojí",v:"Nôn nóng"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"yālì",v:"Áp lực"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"shēngqì",v:"Tức giận"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"fènnù",v:"Phẫn nộ"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"fán",v:"Phiền"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"wúliáo",v:"Chán"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"lèi",v:"Mệt"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"nánguò",v:"Buồn"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"shāngxīn",v:"Đau lòng"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"shīwàng",v:"Thất vọng"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"gūdú",v:"Cô đơn"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"nèixiàng",v:"Hướng nội"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"wàixiàng",v:"Hướng ngoại"},
+  {l:3,n:"Bài 3: Tâm trạng cảm xúc",p:"lěngjìng",v:"Bình tĩnh"},
+  // BÀI 4: GIỚI TÍNH TÍNH CÁCH
+  {l:4,n:"Bài 4: Giới tính tính cách",p:"nánrén",v:"Đàn ông"},
+  {l:4,n:"Bài 4: Giới tính tính cách",p:"nǚrén",v:"Phụ nữ"},
+  {l:4,n:"Bài 4: Giới tính tính cách",p:"nánshēng",v:"Nam sinh / con trai"},
+  {l:4,n:"Bài 4: Giới tính tính cách",p:"nǚshēng",v:"Nữ sinh / con gái"},
+  {l:4,n:"Bài 4: Giới tính tính cách",p:"xìngbié",v:"Giới tính"},
+  {l:4,n:"Bài 4: Giới tính tính cách",p:"dúlì",v:"Độc lập"},
+  {l:4,n:"Bài 4: Giới tính tính cách",p:"chéngshú",v:"Trưởng thành"},
+  {l:4,n:"Bài 4: Giới tính tính cách",p:"rènzhēn",v:"Nghiêm túc"},
+  {l:4,n:"Bài 4: Giới tính tính cách",p:"suíhé",v:"Dễ tính"},
+  {l:4,n:"Bài 4: Giới tính tính cách",p:"yōumò",v:"Hài hước"},
+  {l:4,n:"Bài 4: Giới tính tính cách",p:"lǎoshi",v:"Thật thà"},
+  {l:4,n:"Bài 4: Giới tính tính cách",p:"zhíshuài",v:"Thẳng thắn"},
+  {l:4,n:"Bài 4: Giới tính tính cách",p:"xìxīn",v:"Cẩn thận"},
+  {l:4,n:"Bài 4: Giới tính tính cách",p:"chōngdòng",v:"Nóng vội"},
+  {l:4,n:"Bài 4: Giới tính tính cách",p:"shànliáng",v:"Tốt bụng"},
+  {l:4,n:"Bài 4: Giới tính tính cách",p:"zìxìn",v:"Tự tin"},
+  {l:4,n:"Bài 4: Giới tính tính cách",p:"lèguān",v:"Lạc quan"},
+  {l:4,n:"Bài 4: Giới tính tính cách",p:"bēiguān",v:"Bi quan"},
+  {l:4,n:"Bài 4: Giới tính tính cách",p:"wēnróu",v:"Dịu dàng"},
+  {l:4,n:"Bài 4: Giới tính tính cách",p:"jiānqiáng",v:"Mạnh mẽ"},
+  // BÀI 5: AN ỦI – ĐỘNG VIÊN
+  {l:5,n:"Bài 5: An ủi – Động viên",p:"ānwèi",v:"An ủi"},
+  {l:5,n:"Bài 5: An ủi – Động viên",p:"gǔlì",v:"Động viên"},
+  {l:5,n:"Bài 5: An ủi – Động viên",p:"bié dānxīn",v:"Đừng lo"},
+  {l:5,n:"Bài 5: An ủi – Động viên",p:"méi shì",v:"Không sao"},
+  {l:5,n:"Bài 5: An ủi – Động viên",p:"fàngxīn",v:"Cứ yên tâm"},
+  {l:5,n:"Bài 5: An ủi – Động viên",p:"jiāyóu",v:"Cố lên"},
+  {l:5,n:"Bài 5: An ủi – Động viên",p:"zhènzuò",v:"Lấy lại tinh thần"},
+  {l:5,n:"Bài 5: An ủi – Động viên",p:"jiānchí",v:"Kiên trì / Cố gắng tiếp tục"},
+  {l:5,n:"Bài 5: An ủi – Động viên",p:"xiāngxìn",v:"Tin tưởng"},
+  {l:5,n:"Bài 5: An ủi – Động viên",p:"nǔlì",v:"Nỗ lực / cố gắng"},
+  {l:5,n:"Bài 5: An ủi – Động viên",p:"bié nánguò",v:"Đừng buồn"},
+  {l:5,n:"Bài 5: An ủi – Động viên",p:"huì hǎo de",v:"Rồi sẽ ổn thôi"},
+  {l:5,n:"Bài 5: An ủi – Động viên",p:"shēn hūxī",v:"Hít thở sâu"},
+  {l:5,n:"Bài 5: An ủi – Động viên",p:"fàng qīngsōng",v:"Thư giãn đi"},
+  {l:5,n:"Bài 5: An ủi – Động viên",p:"zài shì yí cì",v:"Thử lại lần nữa"},
+  {l:5,n:"Bài 5: An ủi – Động viên",p:"fàngxià",v:"Buông bớt"},
+  {l:5,n:"Bài 5: An ủi – Động viên",p:"ānxīn diǎn",v:"Yên tâm hơn một chút"},
+  {l:5,n:"Bài 5: An ủi – Động viên",p:"jiēshòu",v:"Chấp nhận / Nghĩ thông ra"},
+  // BÀI 6: NGÀY LỄ - LỄ TẾT
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"jiérì",v:"Ngày lễ"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"guò jié",v:"Ăn lễ, đón lễ"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"jiàqī",v:"Kỳ nghỉ"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"fàngjià",v:"Nghỉ lễ"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"guònián",v:"Ăn Tết"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"xīnnián",v:"Năm mới"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"Chūnjié",v:"Tết Nguyên Đán"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"chúxī",v:"Giao thừa"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"niányèfàn",v:"Bữa cơm tất niên"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"bàinián",v:"Chúc Tết"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"hóngbāo",v:"Lì xì"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"lǐwù",v:"Quà"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"tuányuán",v:"Đoàn tụ"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"chuántǒng",v:"Truyền thống"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"xísú",v:"Phong tục"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"rènào",v:"Náo nhiệt"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"qìfēn",v:"Không khí (bầu không khí)"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"yānhuā",v:"Pháo hoa"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"Zhōngqiūjié",v:"Tết Trung Thu"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"yuèbǐng",v:"Bánh trung thu"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"Guóqìngjié",v:"Quốc khánh"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"Shèngdànjié",v:"Giáng sinh"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"Qíngrénjié",v:"Lễ tình nhân"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"jiārén",v:"Gia đình"},
+  {l:6,n:"Bài 6: Ngày lễ - Lễ tết",p:"jùhuì",v:"Tụ họp"},
+  // BÀI 7: XIN PHÉP - NGHỈ PHÉP
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"qǐngjià",v:"Xin nghỉ phép"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"shēnqǐng",v:"Xin / nộp đơn"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"qǐngqiú",v:"Đề nghị / xin"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"pīzhǔn",v:"Phê duyệt"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"tóngyì",v:"Đồng ý"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"bù tóngyì",v:"Không đồng ý"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"yuányīn",v:"Lý do"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"línshí",v:"Đột xuất"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"sīshì",v:"Việc cá nhân"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"shēngbìng",v:"Bị ốm"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"kàn yīshēng",v:"Đi khám bác sĩ"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"shēntǐ bù shūfu",v:"Không khỏe"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"chǔlǐ",v:"Xử lý"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"yánqī",v:"Hoãn lại"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"tiáozhěng",v:"Điều chỉnh"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"shàngbān",v:"Đi làm"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"shàngkè",v:"Đi học"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"qǐng yì tiān jià",v:"Xin nghỉ 1 ngày"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"qǐng bàn tiān jià",v:"Xin nghỉ nửa ngày"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"tíqián",v:"Trước / sớm hơn"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"tōngzhī",v:"Thông báo"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"máfan",v:"Phiền"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"yǐngxiǎng",v:"Ảnh hưởng"},
+  {l:7,n:"Bài 7: Xin phép - Nghỉ phép",p:"jǐnliàng",v:"Cố gắng hết mức"},
+  // BÀI 8: QUAN HỆ XÃ HỘI
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"shèhuì",v:"Xã hội"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"guānxì",v:"Quan hệ"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"péngyou",v:"Bạn bè"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"tóngshì",v:"Đồng nghiệp"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"tóngxué",v:"Bạn học"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"línjū",v:"Hàng xóm"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"shúrén",v:"Người quen"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"mòshēngrén",v:"Người lạ"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"liánxì",v:"Liên lạc"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"gōutōng",v:"Giao tiếp"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"lǐjiě",v:"Thấu hiểu"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"zūnzhòng",v:"Tôn trọng"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"xìnrèn",v:"Tin tưởng"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"zhīchí",v:"Ủng hộ"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"bāngzhù",v:"Giúp đỡ"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"hézuò",v:"Hợp tác"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"máodùn",v:"Mâu thuẫn"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"jiějué",v:"Giải quyết"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"guānxīn",v:"Quan tâm"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"lǐmào",v:"Lịch sự"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"tàidu",v:"Thái độ"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"bǎochí",v:"Giữ gìn"},
+  {l:8,n:"Bài 8: Quan hệ xã hội",p:"jiànlì",v:"Xây dựng"},
+  // BÀI 9: THỜI TIẾT
+  {l:9,n:"Bài 9: Thời tiết",p:"tiānqì",v:"Thời tiết"},
+  {l:9,n:"Bài 9: Thời tiết",p:"qíngtiān",v:"Trời nắng"},
+  {l:9,n:"Bài 9: Thời tiết",p:"yīntiān",v:"Trời âm u"},
+  {l:9,n:"Bài 9: Thời tiết",p:"xiàyǔ",v:"Mưa"},
+  {l:9,n:"Bài 9: Thời tiết",p:"xiàxuě",v:"Tuyết rơi"},
+  {l:9,n:"Bài 9: Thời tiết",p:"guā fēng",v:"Gió"},
+  {l:9,n:"Bài 9: Thời tiết",p:"duō yún",v:"Nhiều mây"},
+  {l:9,n:"Bài 9: Thời tiết",p:"rè",v:"Nóng"},
+  {l:9,n:"Bài 9: Thời tiết",p:"lěng",v:"Lạnh"},
+  {l:9,n:"Bài 9: Thời tiết",p:"liángkuai",v:"Mát mẻ"},
+  {l:9,n:"Bài 9: Thời tiết",p:"nuǎnhuo",v:"Ấm áp"},
+  {l:9,n:"Bài 9: Thời tiết",p:"mēn",v:"Nóng bức"},
+  {l:9,n:"Bài 9: Thời tiết",p:"cháoshī",v:"Ẩm"},
+  {l:9,n:"Bài 9: Thời tiết",p:"gānzào",v:"Khô"},
+  {l:9,n:"Bài 9: Thời tiết",p:"wēndù",v:"Nhiệt độ"},
+  {l:9,n:"Bài 9: Thời tiết",p:"biàn lěng",v:"Trở lạnh"},
+  {l:9,n:"Bài 9: Thời tiết",p:"biàn rè",v:"Trở nóng"},
+  {l:9,n:"Bài 9: Thời tiết",p:"tiānqì yùbào",v:"Dự báo thời tiết"},
+  {l:9,n:"Bài 9: Thời tiết",p:"xià dàyǔ",v:"Mưa to"},
+  {l:9,n:"Bài 9: Thời tiết",p:"xiǎoyǔ",v:"Mưa nhỏ"},
+  {l:9,n:"Bài 9: Thời tiết",p:"léi",v:"Sấm"},
+  {l:9,n:"Bài 9: Thời tiết",p:"táifēng",v:"Bão"},
+  {l:9,n:"Bài 9: Thời tiết",p:"wù",v:"Sương mù"},
+  {l:9,n:"Bài 9: Thời tiết",p:"kōngqì",v:"Không khí"},
+  // BÀI 10: ĐI CHỢ - SIÊU THỊ
+  {l:10,n:"Bài 10: Đi chợ - Siêu thị",p:"cài",v:"Rau, món ăn"},
+  {l:10,n:"Bài 10: Đi chợ - Siêu thị",p:"shuǐguǒ tān",v:"Sạp trái cây"},
+  {l:10,n:"Bài 10: Đi chợ - Siêu thị",p:"ròu tān",v:"Sạp bán thịt"},
+  {l:10,n:"Bài 10: Đi chợ - Siêu thị",p:"cùxiāo",v:"Khuyến mãi"},
+  {l:10,n:"Bài 10: Đi chợ - Siêu thị",p:"dāngtiān",v:"Trong ngày"},
+  {l:10,n:"Bài 10: Đi chợ - Siêu thị",p:"běndì",v:"Địa phương"},
+  {l:10,n:"Bài 10: Đi chợ - Siêu thị",p:"jìnkǒu",v:"Nhập khẩu"},
+  {l:10,n:"Bài 10: Đi chợ - Siêu thị",p:"zhìliàng",v:"Chất lượng"},
+  {l:10,n:"Bài 10: Đi chợ - Siêu thị",p:"hǎokàn",v:"Nhìn đẹp"},
+  {l:10,n:"Bài 10: Đi chợ - Siêu thị",p:"nàiyòng",v:"Bền"},
+  {l:10,n:"Bài 10: Đi chợ - Siêu thị",p:"hésuàn",v:"Đáng tiền"},
+  {l:10,n:"Bài 10: Đi chợ - Siêu thị",p:"chángyòng",v:"Hay dùng"},
+  {l:10,n:"Bài 10: Đi chợ - Siêu thị",p:"rìyòngpǐn",v:"Đồ dùng hằng ngày"},
+  {l:10,n:"Bài 10: Đi chợ - Siêu thị",p:"bǎozhìqī",v:"Hạn sử dụng"},
+  {l:10,n:"Bài 10: Đi chợ - Siêu thị",p:"shèngxià",v:"Còn lại"},
+  {l:10,n:"Bài 10: Đi chợ - Siêu thị",p:"quánbù",v:"Toàn bộ"},
+  {l:10,n:"Bài 10: Đi chợ - Siêu thị",p:"dài zǒu",v:"Mang đi"},
+  {l:10,n:"Bài 10: Đi chợ - Siêu thị",p:"cháng yì cháng",v:"Nếm thử"},
+  {l:10,n:"Bài 10: Đi chợ - Siêu thị",p:"yōuhuì",v:"Ưu đãi / khuyến mãi"},
+  // BÀI 11: ĂN UỐNG - GỌI MÓN
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"chīfàn",v:"Ăn cơm"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"cāntīng",v:"Nhà hàng"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"fàndiàn",v:"Quán ăn"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"diǎn cài",v:"Gọi món"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"càidān",v:"Thực đơn"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"fúwùyuán",v:"Nhân viên phục vụ"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"kèrén",v:"Khách"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"zhāopái cài",v:"Món đặc trưng"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"tuījiàn",v:"Giới thiệu, đề xuất"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"wèidào",v:"Hương vị"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"hǎochī",v:"Ngon"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"búcuò",v:"Không tệ"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"nánchī",v:"Dở"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"là",v:"Cay"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"bú là",v:"Không cay"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"tián",v:"Ngọt"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"xián",v:"Mặn"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"qīngdàn",v:"Nhẹ, ít dầu"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"zài lái",v:"Gọi thêm"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"yí fèn",v:"Một phần"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"liǎng fèn",v:"Hai phần"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"yǐnliào",v:"Nước uống"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"mǎidān",v:"Tính tiền"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"jiézhàng",v:"Thanh toán"},
+  {l:11,n:"Bài 11: Ăn uống - Gọi món",p:"dǎbāo",v:"Gói mang về"},
+  // BÀI 12: DU LỊCH
+  {l:12,n:"Bài 12: Du lịch",p:"lǚxíng",v:"Du lịch"},
+  {l:12,n:"Bài 12: Du lịch",p:"lǚyóu",v:"Tham quan"},
+  {l:12,n:"Bài 12: Du lịch",p:"dǎoyóu",v:"Hướng dẫn viên"},
+  {l:12,n:"Bài 12: Du lịch",p:"jǐngdiǎn",v:"Điểm tham quan"},
+  {l:12,n:"Bài 12: Du lịch",p:"ménpiào",v:"Vé vào cổng"},
+  {l:12,n:"Bài 12: Du lịch",p:"dìtú",v:"Bản đồ"},
+  {l:12,n:"Bài 12: Du lịch",p:"piàojià",v:"Giá vé"},
+  {l:12,n:"Bài 12: Du lịch",p:"xíngchéng",v:"Lịch trình"},
+  {l:12,n:"Bài 12: Du lịch",p:"yùdìng",v:"Đặt trước"},
+  {l:12,n:"Bài 12: Du lịch",p:"yùyuē",v:"Hẹn trước"},
+  {l:12,n:"Bài 12: Du lịch",p:"jiāotōng",v:"Giao thông"},
+  {l:12,n:"Bài 12: Du lịch",p:"gōngyuán",v:"Công viên"},
+  {l:12,n:"Bài 12: Du lịch",p:"bówùguǎn",v:"Bảo tàng"},
+  {l:12,n:"Bài 12: Du lịch",p:"fēngjǐng",v:"Phong cảnh"},
+  {l:12,n:"Bài 12: Du lịch",p:"hǎitān",v:"Bãi biển"},
+  {l:12,n:"Bài 12: Du lịch",p:"gòuwù",v:"Mua sắm"},
+  {l:12,n:"Bài 12: Du lịch",p:"jìniànpǐn",v:"Quà lưu niệm"},
+  {l:12,n:"Bài 12: Du lịch",p:"zhàoxiàng",v:"Chụp ảnh"},
+  {l:12,n:"Bài 12: Du lịch",p:"zìpāi",v:"Tự chụp"},
+  {l:12,n:"Bài 12: Du lịch",p:"qiānzhèng",v:"Visa"},
+  {l:12,n:"Bài 12: Du lịch",p:"hùzhào",v:"Hộ chiếu"},
+  {l:12,n:"Bài 12: Du lịch",p:"rùjìng",v:"Nhập cảnh"},
+  {l:12,n:"Bài 12: Du lịch",p:"chūjìng",v:"Xuất cảnh"},
+  {l:12,n:"Bài 12: Du lịch",p:"zhùsú",v:"Lưu trú"},
+  // BÀI 13: YÊU CẦU PHỤC VỤ PHÒNG
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"jiǔdiàn",v:"Khách sạn"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"bīnguǎn",v:"Nhà nghỉ"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"qiántái",v:"Lễ tân"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"yùdìng fángjiān",v:"Đặt phòng"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"rùzhù",v:"Nhận phòng"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"tuìfáng",v:"Trả phòng"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"shuāngrénjiān",v:"Phòng đôi"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"dānrénjiān",v:"Phòng đơn"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"fángkǎ",v:"Thẻ phòng"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"xínglǐ",v:"Hành lý"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"dǎsǎo fángjiān",v:"Dọn phòng"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"kèfáng fúwù",v:"Dịch vụ phòng"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"máojīn",v:"Khăn"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"bèizi",v:"Chăn"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"yáshuā",v:"Bàn chải"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"xǐfàshuǐ",v:"Dầu gội"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"mùyùlù",v:"Sữa tắm"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"rèshuǐ",v:"Nước nóng"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"kōngtiáo",v:"Điều hòa"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"tóusù",v:"Khiếu nại"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"zhàngdān",v:"Hóa đơn"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"yājīn",v:"Tiền cọc"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"yánchí tuìfáng",v:"Trả phòng trễ"},
+  {l:13,n:"Bài 13: Yêu cầu phục vụ phòng",p:"zǎocān quàn",v:"Phiếu ăn sáng"},
+  // BÀI 14: LỜI CHÚC – LỜI KHEN
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"zhù",v:"Chúc"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"gōngxǐ",v:"Chúc mừng"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"zhùfú",v:"Lời chúc"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"hǎo yùn",v:"May mắn"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"shùnlì",v:"Suôn sẻ"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"chénggōng",v:"Thành công"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"jiànkāng",v:"Khỏe mạnh"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"xìngfú",v:"Hạnh phúc"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"wànshì rúyì",v:"Vạn sự như ý"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"jiāyóu",v:"Cố lên"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"shēngrì kuàilè",v:"Sinh nhật vui vẻ"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"xīnnián kuàilè",v:"Chúc năm mới vui vẻ"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"jiérì kuàilè",v:"Lễ vui vẻ"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"nǐ zhēn bàng",v:"Bạn giỏi thật"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"yǒu pǐnwèi",v:"Có gu"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"yǒu qìzhì",v:"Khí chất"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"piàoliang",v:"Xinh đẹp"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"shuài",v:"Đẹp trai"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"kě'ài",v:"Dễ thương"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"yōuxiù",v:"Xuất sắc"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"lìhài",v:"Lợi hại / Giỏi"},
+  {l:14,n:"Bài 14: Lời chúc – Lời khen",p:"pèifú",v:"Khâm phục"},
+];
+
+// ============================================================
+// APP STATE
+// ============================================================
+let selectedLessons = new Set([1,2,3,4,5,6,7,8,9,10,11,12,13,14]);
+let selectedMode = 'both';
+let questions = [];
+let currentQ = 0;
+let score = 0;
+let answered = false;
+let history = []; // {question, correct, userAnswer, correctAnswer}
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  const chips = document.getElementById('lesson-chips');
+  const allChip = document.createElement('div');
+  allChip.className = 'chip all-chip selected';
+  allChip.textContent = 'Tất cả';
+  allChip.id = 'chip-all';
+  allChip.onclick = () => toggleAll();
+  chips.appendChild(allChip);
+
+  for (let i = 1; i <= 14; i++) {
+    const c = document.createElement('div');
+    c.className = 'chip selected';
+    c.id = `chip-${i}`;
+    c.textContent = `Bài ${i}`;
+    c.onclick = () => toggleLesson(i);
+    chips.appendChild(c);
+  }
+}
+
+function toggleAll() {
+  const allSelected = selectedLessons.size === 14;
+  if (allSelected) {
+    selectedLessons.clear();
+    for (let i = 1; i <= 14; i++) document.getElementById(`chip-${i}`).classList.remove('selected');
+    document.getElementById('chip-all').classList.remove('all-chip');
+  } else {
+    for (let i = 1; i <= 14; i++) { selectedLessons.add(i); document.getElementById(`chip-${i}`).classList.add('selected'); }
+    document.getElementById('chip-all').className = 'chip all-chip selected';
+  }
+}
+
+function toggleLesson(n) {
+  const c = document.getElementById(`chip-${n}`);
+  if (selectedLessons.has(n)) { selectedLessons.delete(n); c.classList.remove('selected'); }
+  else { selectedLessons.add(n); c.classList.add('selected'); }
+  const allBtn = document.getElementById('chip-all');
+  allBtn.className = selectedLessons.size === 14 ? 'chip all-chip selected' : 'chip all-chip';
+}
+
+function selectMode(mode) {
+  selectedMode = mode;
+  ['both','p2v','v2p'].forEach(m => {
+    document.getElementById(`mode-${m}`).classList.toggle('selected', m === mode);
+  });
+}
+
+// ============================================================
+// QUESTION GENERATION
+// ============================================================
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function getPool() {
+  return VOCAB.filter(v => selectedLessons.has(v.l));
+}
+
+function generateQuestions(count = 20) {
+  const pool = getPool();
+  if (pool.length < 4) { alert('Chọn ít nhất 1 bài có đủ từ vựng!'); return null; }
+
+  const qs = [];
+  const shuffled = shuffle([...pool]);
+
+  for (let i = 0; i < count; i++) {
+    const item = shuffled[i % shuffled.length];
+    let type;
+    if (selectedMode === 'p2v') type = 'p2v';
+    else if (selectedMode === 'v2p') type = 'v2p';
+    else type = Math.random() < 0.5 ? 'p2v' : 'v2p';
+
+    // Generate distractors
+    const others = pool.filter(v => v !== item);
+    const distractors = shuffle([...others]).slice(0, 3);
+    let options, correct, prompt;
+
+    if (type === 'p2v') {
+      prompt = item.p;
+      correct = item.v;
+      options = shuffle([correct, ...distractors.map(d => d.v)]);
+    } else {
+      prompt = item.v;
+      correct = item.p;
+      options = shuffle([correct, ...distractors.map(d => d.p)]);
+    }
+
+    qs.push({ item, type, prompt, correct, options });
+  }
+  return qs;
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showHome() { showScreen('screen-home'); }
+
+function startQuiz() {
+  if (selectedLessons.size === 0) { alert('Vui lòng chọn ít nhất một bài!'); return; }
+  questions = generateQuestions(20);
+  if (!questions) return;
+  currentQ = 0; score = 0; history = [];
+  showScreen('screen-quiz');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = questions[currentQ];
+  const total = questions.length;
+
+  // Progress
+  const pct = (currentQ / total) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = `Câu ${currentQ + 1} / ${total}`;
+  document.getElementById('score-badge').textContent = score + ' ✓';
+
+  // Question
+  document.getElementById('q-type-label').textContent = q.type === 'p2v' ? '🔊 Pinyin → Tiếng Việt' : '📖 Tiếng Việt → Pinyin';
+  document.getElementById('q-lesson-label').textContent = q.item.n;
+  document.getElementById('q-text').textContent = q.prompt;
+
+  // Options
+  const grid = document.getElementById('options-grid');
+  grid.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.textContent = opt;
+    btn.onclick = () => checkAnswer(opt, btn);
+    grid.appendChild(btn);
+  });
+
+  // Reset UI
+  const fb = document.getElementById('feedback-bar');
+  fb.className = 'feedback-bar';
+  fb.textContent = '';
+  document.getElementById('next-btn').style.display = 'none';
+  answered = false;
+}
+
+function checkAnswer(chosen, btn) {
+  if (answered) return;
+  answered = true;
+  const q = questions[currentQ];
+  const isCorrect = chosen === q.correct;
+
+  // Style buttons
+  const allBtns = document.querySelectorAll('.option-btn');
+  allBtns.forEach(b => {
+    b.disabled = true;
+    if (b.textContent === q.correct) b.classList.add(isCorrect ? 'correct' : 'reveal');
+  });
+  if (!isCorrect) btn.classList.add('wrong');
+
+  // Feedback
+  const fb = document.getElementById('feedback-bar');
+  if (isCorrect) {
+    fb.className = 'feedback-bar correct';
+    fb.textContent = '✅ Chính xác!';
+    score++;
+  } else {
+    fb.className = 'feedback-bar wrong';
+    fb.textContent = `❌ Sai! Đáp án đúng: ${q.correct}`;
+  }
+
+  history.push({ q, isCorrect, chosen });
+  document.getElementById('next-btn').style.display = 'flex';
+}
+
+function nextQuestion() {
+  currentQ++;
+  if (currentQ >= questions.length) {
+    showResults();
+  } else {
+    renderQuestion();
+  }
+}
+
+// ============================================================
+// RESULTS
+// ============================================================
+function showResults() {
+  const total = questions.length;
+  const pct = Math.round((score / total) * 100);
+  const wrong = total - score;
+
+  document.getElementById('result-score').textContent = pct + '%';
+  document.getElementById('result-total').textContent = `${score} / ${total} câu đúng`;
+
+  let msg, sub;
+  if (pct === 100) { msg = '🏆 Xuất sắc! Hoàn hảo!'; sub = 'Bạn đã nắm vững tất cả từ vựng!'; }
+  else if (pct >= 80) { msg = '🌟 Rất tốt!'; sub = 'Bạn đã thuộc phần lớn từ vựng rồi!'; }
+  else if (pct >= 60) { msg = '👍 Khá ổn!'; sub = 'Hãy ôn lại những từ còn sai nhé.'; }
+  else if (pct >= 40) { msg = '📚 Cần cố gắng thêm!'; sub = 'Hãy xem lại từ vựng trước khi làm lại.'; }
+  else { msg = '💪 Đừng nản lòng!'; sub = 'Ôn lại từ vựng và thử lại nhé!'; }
+
+  document.getElementById('result-msg').textContent = msg;
+  document.getElementById('result-sub').textContent = sub;
+
+  document.getElementById('result-breakdown').innerHTML = `
+    <div class="rb-box good"><div class="num">${score}</div><div class="lbl">✅ Đúng</div></div>
+    <div class="rb-box bad"><div class="num">${wrong}</div><div class="lbl">❌ Sai</div></div>
+    <div class="rb-box neutral"><div class="num">${pct}%</div><div class="lbl">📊 Điểm</div></div>
+  `;
+
+  // Build review
+  const rl = document.getElementById('review-list');
+  rl.innerHTML = '';
+  history.forEach((h, i) => {
+    const div = document.createElement('div');
+    div.className = 'review-item';
+    const typeLabel = h.q.type === 'p2v' ? 'Pinyin → Việt' : 'Việt → Pinyin';
+    div.innerHTML = `
+      <div class="icon">${h.isCorrect ? '✅' : '❌'}</div>
+      <div>
+        <div class="q">Câu ${i+1} [${typeLabel}]: <strong>${h.q.prompt}</strong></div>
+        ${h.isCorrect
+          ? `<div class="a-correct">✔ ${h.q.correct}</div>`
+          : `<div class="a-wrong">✘ Bạn chọn: ${h.chosen}</div><div class="a-correct">✔ Đúng: ${h.q.correct}</div>`
+        }
+        <div style="font-size:0.75rem;color:#a0aec0;margin-top:2px;">${h.q.item.n}</div>
+      </div>
+    `;
+    rl.appendChild(div);
+  });
+
+  document.getElementById('review-section').style.display = 'none';
+  showScreen('screen-result');
+}
+
+function toggleReview() {
+  const s = document.getElementById('review-section');
+  s.style.display = s.style.display === 'none' ? 'block' : 'none';
+}
+
+// Start
+init();
+</script>
+</body>
+</html>
